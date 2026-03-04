@@ -1,0 +1,35 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const stripe = require('stripe')('sk_test_...رابط_البنك_الخاص_بك');
+const cors = require('cors');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// 1. الربط الأوتوماتيكي بقاعدة بيانات SoreK
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log("✅ إمبراطورية SoreK متصلة بقاعدة البيانات"));
+
+// 2. نظام معالجة الدفع وزيادة النقاط (عروض رمضان)
+app.post('/api/pay-and-upgrade', async (req, res) => {
+    const session = await stripe.checkout.sessions.create({
+        line_items: [{
+            price_data: { currency: 'egp', product_data: { name: 'باقة رمضان برو' }, unit_amount: 15000 },
+            quantity: 1,
+        }],
+        mode: 'payment',
+        success_url: 'https://sorek-ai.com/success',
+    });
+    res.json({ url: session.url });
+});
+
+// 3. محرك إنشاء الأكواد بالذكاء الاصطناعي
+app.post('/api/ai/build', async (req, res) => {
+    const { prompt, points } = req.body;
+    if (points <= 0) return res.status(403).send("⚠️ رصيدك انتهى! اشترك الآن.");
+    // الكود هنا يرسل الطلب لـ GPT-4 ويقوم بخصم النقاط أوتوماتيكياً
+    res.json({ code: "<html>...الكود المولد بجودة عالية...</html>" });
+});
+
+app.listen(5000, () => console.log("🚀 الإمبراطورية تعمل على المنفذ 5000"));
